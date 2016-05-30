@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>"Live" SNMP</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<!-- <link rel="stylesheet" type="text/css" media="screen" href="/presentation/login.css"> -->
+		<!-- Google font-->
+		<!-- <link href='http://fonts.googleapis.com/css?family=ABeeZee' rel='stylesheet' type='text/css'> -->
+		<!-- meta -->
+		<meta name="description" content="">
+		<meta name="author" content="ldev.no - Jonas Lindstad">
+		
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="//code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		
+		<link type="text/css" rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+
+        <!--
+            BOOTSTRAP CSS
+        -->
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+		
+		<!-- HighCharts -->
+        <script src="Highcharts-4.2.3/js/highcharts.js"></script>
+        <script src="Highcharts-4.2.3/js/themes/dark-unica.js"></script>
+		<script type="text/javascript">
+            var chart; // global
+	        var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 400)
+            var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 400)
+                
+            $(function () {
+                /**
+                 * Request data from the server, add it to the graph and set a timeout 
+                 * to request again
+                 */
+                function requestData() {
+                    $.ajax({
+                        url: 'fetch_snmp_data.php',
+                        success: function(point) {
+                            var series = chart.series[0],
+                                shift = series.data.length > 20; // shift if the series is longer than 20
+                                
+                            var series = chart.series[1],
+                                shift = series.data.length > 20; // shift if the series is longer than 20
+                                
+                            // add the point
+                            chart.series[0].addPoint(point['inbound'], false, shift);
+                            chart.series[1].addPoint(point['outbound'], true, shift);
+                            setTimeout(requestData, 2000);    
+                        },
+                        cache: false
+                    });
+                }
+                
+                
+                
+
+            
+                chart = new Highcharts.Chart({
+                    chart: {
+                        renderTo: 'container',
+                        alignTicks: true,
+                        animation: true, // When moving between data points
+                        height: h,
+                        width: w,
+                        events: {
+                            load: requestData
+                        }
+                    },
+                    title: {
+                        text: 'Bandwidth consumption',
+                    },
+                    xAxis: {
+                        // categories: ['T-55s', 'T-50s', 'T-45s', 'T-40s', 'T-35s', 'T-30s', 'T-25s', 'T-20s', 'T-15s', 'T-10s', 'T-5s', 'Now']
+                        type: 'datetime',
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Bandwidth - Mbit/s'
+                        },
+                        /*
+                        plotLines: [{
+                            value: 0,
+                            width: 1,
+                            color: '#808080'
+                        }]
+                        */
+                    },
+                    tooltip: {
+                        valueSuffix: 'Mbit/s'
+                    },
+                    plotOptions: {
+                        spline: {
+                            animation: true,
+                            lineWidth: 4,
+                            marker: {
+                                enabled: false
+                            },
+                        }
+                        
+                    },
+                    /*
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle',
+                        borderWidth: 0
+                    },
+                    */
+                    series: [{
+                        type: 'spline',
+                        name: 'Inbound',
+                        animation: {
+                            duration: 1500
+                        }
+                        // data: [7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 25.2, 26.5, 23.3, 18.3, 13.9, 9.6]
+                    }, {
+                        type: 'spline',
+                        name: 'Outbound',
+                        animation: {
+                            duration: 1500
+                        }
+                        // data: [-0.2, 0.8, 5.7, 11.3, 17.0, 22.0, 24.8, 24.1, 20.1, 14.1, 8.6, 2.5]
+                    }]
+                });
+            });
+        </script>
+	</head>
+	<body>
+	    <div id="container"></div>
+	</body>
+</html>
+

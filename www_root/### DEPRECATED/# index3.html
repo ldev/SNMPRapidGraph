@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>"Live" SNMP</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<!-- <link rel="stylesheet" type="text/css" media="screen" href="/presentation/login.css"> -->
+		<!-- Google font-->
+		<!-- <link href='http://fonts.googleapis.com/css?family=ABeeZee' rel='stylesheet' type='text/css'> -->
+		<!-- meta -->
+		<meta name="description" content="">
+		<meta name="author" content="ldev.no - Jonas Lindstad">
+		
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="//code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		
+		<link type="text/css" rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+
+        <!--
+            BOOTSTRAP CSS
+        -->
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+		
+		<!-- HighCharts -->
+        <script src="Highcharts-4.2.3/js/highcharts.js"></script>
+        <script src="Highcharts-4.2.3/js/themes/dark-unica.js"></script>
+		<script type="text/javascript">
+            var chart; // global
+	        var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 400)
+            var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 400)
+                
+            $(function () {
+                /**
+                 * Request data from the server, add it to the graph and set a timeout 
+                 * to request again
+                 */
+                function requestData() {
+                    $.ajax({
+                        url: 'dataprovider.json.php',
+                        success: function(point) {
+                            // console.log(point);
+                            
+                            // addPoint (Object options, [Boolean redraw], [Boolean shift], [Mixed animation])
+                            // The point options. If options is a single number, a point with that y value is appended to the series.
+                            // If it is an array, it will be interpreted as x and y values respectively.
+                            // If it is an object, advanced options as outlined under series.data are applied.
+                            
+                            var shift = chart.series[0].data.length > 20; // shift == true if there is more than 20 points in the series
+                            
+                            // Process inbound
+                            // var inbound = new Array();
+                            // time = new Date(parseInt(point['inbound'][0]));
+                            value = point['inbound'][1];
+                            
+                            categories = chart.xAxis[0].categories.slice(0);
+                            console.log(categories);
+                            categories.push(parseInt(point['inbound'][0]));
+                            chart.xAxis[0].setCategories(categories);
+                            chart.redraw();
+                            
+                            chart.series[0].addPoint([Date(parseInt(point['inbound'][0])), value], false, shift);
+                            console.log(chart.series[0]);
+                            
+                            // chart.redraw();
+                            
+
+
+                            setTimeout(requestData, 1000);    
+                        },
+                        cache: false
+                    });
+                }
+                
+                
+                
+
+            
+                chart = new Highcharts.Chart({
+                    chart: {
+                        renderTo: 'container',
+                        // alignTicks: true,
+                        animation: true, // When moving between data points
+                        height: h,
+                        width: w,
+                        events: {
+                            load: requestData
+                        }
+                    },
+                    title: {
+                        text: 'Bandwidth consumption',
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Last 50 seconds'
+                        },
+                        labels: {
+                            format: "{value:%H:%M:%S}" 
+                        } ,
+                        categories: [Date.now()]
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Bandwidth - Mbit/s'
+                        },
+                    },
+                    tooltip: {
+                        valueSuffix: 'Mbit/s'
+                    },
+                    plotOptions: {
+                        spline: {
+                            animation: true,
+                            lineWidth: 4,
+                            marker: {
+                                enabled: false
+                            },
+                        }
+                        
+                    },
+                    series: [{
+                        type: 'spline',
+                        name: 'Inbound',
+                        animation: {
+                            duration: 1500
+                        },
+                        data: [0]
+                    }]
+                });
+            });
+        </script>
+	</head>
+	<body>
+	    <div id="container"></div>
+	</body>
+</html>
+
